@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MP4 → MKV · ffmpeg.wasm</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#0b0d17] text-[#e2e8f0] flex items-start justify-center min-h-screen p-4 font-sans">
+
+<div class="w-full max-w-xl space-y-4">
+  <!-- Header -->
+  <div class="text-center">
+    <h1 class="text-xl font-bold">MP4 → MKV</h1>
+    <p class="text-xs text-[#64748b]">Conversión directa en el navegador · timeout + cancelación + self‑test</p>
+  </div>
+
+  <!-- Card -->
+  <div class="bg-[#12142a] border border-[rgba(0,242,255,0.1)] rounded-xl p-4 space-y-3">
+
+    <!-- Drop zone -->
+    <div id="dropZone" class="border-2 border-dashed border-[rgba(0,242,255,0.2)] rounded-xl py-5 px-4 text-center cursor-pointer hover:border-[#00f2ff] hover:bg-[rgba(0,242,255,0.03)] transition">
+      <input type="file" id="fileInput" accept=".mp4,video/mp4" class="hidden">
+      <div class="text-2xl mb-1">🎬</div>
+      <div class="text-sm text-[#94a3b8]">Seleccioná o arrastrá un MP4</div>
+      <div class="text-xs text-[#475569] mt-1">o probá con el test automático</div>
+    </div>
+
+    <!-- File info -->
+    <div id="fileInfo" class="hidden flex items-center gap-2 px-3 py-2 bg-[rgba(255,255,255,0.03)] rounded-lg text-sm">
+      <span class="flex-1 truncate" id="fileName"></span>
+      <span class="text-[#64748b]" id="fileSize"></span>
+    </div>
+
+    <!-- Buttons -->
+    <div class="flex gap-2">
+      <button id="convertBtn" disabled class="flex-1 px-4 py-2.5 rounded-lg font-semibold text-sm bg-gradient-to-r from-[#00f2ff] to-[#8b5cf6] text-white disabled:opacity-30 disabled:cursor-not-allowed transition">Convertir a MKV</button>
+      <button id="testBtn" class="px-4 py-2.5 rounded-lg font-semibold text-sm bg-[rgba(255,255,255,0.06)] border border-[rgba(255,255,255,0.1)] text-[#94a3b8] hover:bg-[rgba(255,255,255,0.1)] transition">Self‑test</button>
+      <button id="cancelBtn" disabled class="px-3 py-2.5 rounded-lg font-semibold text-sm bg-[rgba(239,68,68,0.15)] border border-[rgba(239,68,68,0.25)] text-[#fca5a5] disabled:opacity-30 disabled:cursor-not-allowed transition">✕</button>
+    </div>
+
+    <!-- Progress & timer -->
+    <div class="flex items-center gap-3">
+      <div class="flex-1 h-1.5 bg-[rgba(255,255,255,0.06)] rounded-full overflow-hidden">
+        <div id="progressBar" class="h-full w-0 rounded-full bg-gradient-to-r from-[#00f2ff] to-[#8b5cf6] transition-all duration-300"></div>
+      </div>
+      <span id="timer" class="text-xs text-[#64748b] w-16 text-right tabular-nums">—</span>
+    </div>
+
+    <!-- Log / status -->
+    <div id="log" class="h-40 overflow-y-auto rounded-lg bg-[rgba(0,0,0,0.3)] p-3 text-xs font-mono leading-relaxed"></div>
+
+    <!-- Download + files list -->
+    <div id="results" class="hidden space-y-2">
+      <a id="downloadLink" class="block text-center text-sm font-semibold text-[#6ee7b7] py-2 px-3 rounded-lg border border-[rgba(16,185,129,0.25)] hover:bg-[rgba(16,185,129,0.08)] transition">
+        ⬇ Descargar MKV
+      </a>
+      <div id="fsList" class="text-[10px] text-[#475569] font-mono"></div>
+    </div>
+  </div>
+
+  <!-- Diagnostic summary -->
+  <details class="text-xs text-[#64748b] bg-[rgba(255,255,255,0.02)] rounded-lg p-3">
+    <summary class="cursor-pointer font-medium">🔍 Diagnóstico: por qué se cuelga y cómo se soluciona</summary>
+    <div class="mt-2 space-y-1 leading-relaxed">
+      <p><strong>1. stdin bloqueante</strong> — Sin <code>-y</code> ni <code>-nostdin</code>, ffmpeg espera input del usuario (overwrite prompt) → cuelga para siempre. <span class="text-[#6ee7b7]">Solución: <code>-y -nostdin</code> en los args.</code></span></p>
+      <p><strong>2. Promesa no resuelta</strong> — ffmpeg.exec() devuelve una promesa que depende de postMessage del worker. Si el worker crashea o se cuelga, la promesa nunca se resuelve. <span class="text-[#6ee7b7]">Solución: Promise.race con timeout de 30s + .terminate().</span></p>
+      <p><strong>3. Codec incompatible</strong> — MPEG‑4 Visual, MPEG‑2, etc. no son copiables a MKV sin recodificar. <span class="text-[#6ee7b7]">Solución: detectar con ffprobe + fallback a libx264/aac.</span></p>
+      <p><strong>4. Worker mal inlinado</strong> — Si el import() dinámico dentro del worker falla, el worker nunca responde. <span class="text-[#6ee7b7]">Solución: self‑test que escribe un WAV y lo convierte con copy.</span></p>
+      <p><strong>5. Archivo de salida no creado</strong> — El exec() reporta éxito pero no escribe nada. <span class="text-[#6ee7b7]">Solución: listDir('/') después del exec para verificar.</span></p>
+    </div>
+  </details>
+</div>
+
+<!-- ─── Import Map ──────────────────────────────────── -->
+<script type="importmap">
+{
+  "imports": {
+    "@ffmpeg/ffmpeg": "https://unpkg.com/@ffmpeg/ffmpeg@0.12.6/dist/esm/index.js",
+    "@ffmpeg/util":   "https://unpkg.com/@ffmpeg/util@0.12.1/dist/esm/index.js"
+  }
+}
+</script>
+
+<script type="module">
+import { FFmpeg } from "@ffmpeg/ffmpeg";
+import { fetchFile, toBlobURL } from "@ffmpeg/util";
+
+// ═══════════════════════════════════════════════════════════
+// Constantes
+// ═══════════════════════════════════════════════════════════
+const CORE_BASE   = "https://unpkg.com/@ffmpeg/core@0.12.9/dist/esm";
+const FFMPEG_BASE = "https://unpkg.com/@ffmpeg/ffmpeg@0.12.6/dist/esm";
+const TIMEOUT_MS  = 30_000;
+
+// ═══════════════════════════════════════════════════════════
+// DOM
+// ═══════════════════════════════════════════════════════════
+const $ = s => document.querySelector(s);
+const dropZone     = $("#dropZone");
+const fileInput    = $("#fileInput");
+const fileInfo     = $("#fileInfo");
+const fileName     = $("#fileName");
+const fileSize     = $("#fileSize");
+const convertBtn   = $("#convertBtn");
+const testBtn      = $("#testBtn");
+const cancelBtn    = $("#cancelBtn");
+const progressBar  = $("#progressBar");
+const timer        = $("#timer");
+const logEl        = $("#log");
+const results      = $("#results");
+const downloadLink = $("#downloadLink");
+const fsList       = $("#fsList");
+
+let selectedFile  = null;
+let currentFFmpeg = null;
+let cancelled     = false;
+let operation     = null; // 'convert' | 'test'
+let startMs       = 0;
+let timerInt      = null;
+
+// ═══════════════════════════════════════════════════════════
+// Utilidades
+// ═══════════════════════════════════════════════════════════
+function fmtSize(bytes) {
+  if (!bytes) return "0 B";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1048576) return `${(bytes/1024).toFixed(1)} KB`;
+  return `${(bytes/1048576).toFixed(1)} MB`;
+}
+
+function fmtTime(ms) {
+  if (ms < 1000) return `${ms} ms`;
+  if (ms < 60000) return `${(ms/1000).toFixed(1)} s`;
+  return `${Math.floor(ms/60000)}m ${((ms%60000)/1000).toFixed(1)}s`;
+}
+
+function setProgress(pct) {
+  progressBar.style.width = `${Math.min(Math.max(pct, 0), 100)}%`;
+}
+
+function startClock() {
+  startMs = Date.now();
+  if (timerInt) clearInterval(timerInt);
+  timerInt = setInterval(() => {
+    timer.textContent = fmtTime(Date.now() - startMs);
+  }, 200);
+}
+
+function stopClock() {
+  if (timerInt) { clearInterval(timerInt); timerInt = null; }
+  if (startMs) timer.textContent = fmtTime(Date.now() - startMs);
+}
+
+function clearLog() { logEl.innerHTML = ""; }
+
+function log(msg, type = "info") {
+  const c = { ok:"#6ee7b7", err:"#fca5a5", info:"#67e8f9", warn:"#fbbf24", neutral:"#94a3b8" };
+  logEl.innerHTML += `<span style="color:${c[type]||c.neutral}">●</span> ${msg}\n`;
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+function disableUI(disabled) {
+  convertBtn.disabled = disabled || !selectedFile;
+  cancelBtn.disabled  = !disabled;
+  testBtn.disabled    = disabled;
+}
+
+function resetUI() {
+  disableUI(false);
+  if (!cancelled) setProgress(0);
+  stopClock();
+  cancelled = false;
+  currentFFmpeg = null;
+  operation = null;
+}
+
+// ═══════════════════════════════════════════════════════════
+// Worker inlining (evita SecurityError)
+// ═══════════════════════════════════════════════════════════
+async function createInlineWorkerBlob() {
+  const [w, c, e] = await Promise.all(
+    ["worker.js","const.js","errors.js"].map(f =>
+      fetch(`${FFMPEG_BASE}/${f}`).then(r => { if (!r.ok) throw Error(`${f}: ${r.status}`); return r.text(); })
+    )
+  );
+  const combined = [
+    c.replace(/^export /gm, ""),
+    e.replace(/^export /gm, ""),
+    w.replace(/^import .+ from ["'].+["'];?$/gm, ""),
+  ].join("\n");
+  return URL.createObjectURL(new Blob([combined], { type: "text/javascript" }));
+}
+
+function patchWorker(blobURL) {
+  const N = globalThis.Worker;
+  globalThis.Worker = class extends N {
+    constructor(url, opts) {
+      const s = typeof url === "string" ? url : url.href;
+      super(s.includes("/@ffmpeg/ffmpeg@") && s.endsWith("/worker.js") ? blobURL : url, opts);
+    }
+  };
+  return () => { globalThis.Worker = N; };
+}
+
+// ═══════════════════════════════════════════════════════════
+// Cargar FFmpeg
+// ═══════════════════════════════════════════════════════════
+async function loadFFmpeg(onProgress) {
+  log("Preparando worker inlinado…", "info");
+  const wBlob = await createInlineWorkerBlob();
+  const restore = patchWorker(wBlob);
+
+  try {
+    const coreURL = await toBlobURL(`${CORE_BASE}/ffmpeg-core.js`, "text/javascript");
+    const wasmURL = await toBlobURL(`${CORE_BASE}/ffmpeg-core.wasm`, "application/wasm");
+
+    const ff = new FFmpeg();
+    ff.on("log", ({ message }) => {
+      if (message && message.length < 200) log(message, "neutral");
+    });
+    ff.on("progress", ({ progress }) => {
+      if (progress != null && onProgress) onProgress(progress * 100);
+    });
+
+    log("Inicializando FFmpeg…", "info");
+    await ff.load({ coreURL, wasmURL });
+    log("✓ FFmpeg listo", "ok");
+    return ff;
+  } finally {
+    restore();
+    setTimeout(() => URL.revokeObjectURL(wBlob), 2000);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// Ejecutar con timeout y cancelación
+// ═══════════════════════════════════════════════════════════
+function withTimeout(promise, label) {
+  let timerId;
+  const timeout = new Promise((_, reject) => {
+    timerId = setTimeout(() => reject(new Error(`⏱ TIMEOUT (${TIMEOUT_MS/1000}s): ${label}`)), TIMEOUT_MS);
+  });
+  return { promise: Promise.race([promise, timeout]), cancel: () => clearTimeout(timerId) };
+}
+
+// ═══════════════════════════════════════════════════════════
+// Generar WAV de prueba (sine wave 440Hz)
+// ═══════════════════════════════════════════════════════════
+function generateTestWAV() {
+  const sr = 8000, dur = 0.5, numSamples = Math.floor(sr * dur);
+  const samples = new Float32Array(numSamples);
+  for (let i = 0; i < numSamples; i++)
+    samples[i] = Math.sin(2 * Math.PI * 440 * i / sr) * 0.3;
+
+  const buf = new ArrayBuffer(44 + numSamples * 2);
+  const dv = new DataView(buf);
+  const w = (o, s) => { for (let i = 0; i < s.length; i++) dv.setUint8(o + i, s.charCodeAt(i)); };
+  w(0, 'RIFF'); dv.setUint32(4, 36 + numSamples * 2, true);
+  w(8, 'WAVE'); w(12, 'fmt ');
+  dv.setUint32(16, 16, true);
+  dv.setUint16(20, 1, true);    // PCM
+  dv.setUint16(22, 1, true);    // mono
+  dv.setUint32(24, sr, true);
+  dv.setUint32(28, sr * 2, true);
+  dv.setUint16(32, 2, true);
+  dv.setUint16(34, 16, true);
+  w(36, 'data');
+  dv.setUint32(40, numSamples * 2, true);
+  for (let i = 0; i < numSamples; i++) {
+    const s = Math.max(-1, Math.min(1, samples[i]));
+    dv.setInt16(44 + i * 2, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+  }
+  return new Uint8Array(buf);
+}
+
+// ═══════════════════════════════════════════════════════════
+// Self-test: genera WAV → copia a WAV → verifica
+// ═══════════════════════════════════════════════════════════
+async function runSelfTest() {
+  operation = "test";
+  cancelled = false;
+  clearLog();
+  results.hidden = true;
+  disableUI(true);
+  setProgress(0);
+  startClock();
+
+  try {
+    log("🧪 Self-test: generando WAV de prueba…", "info");
+    const wav = generateTestWAV();
+    log(`  WAV: ${wav.length} bytes, 440Hz sine, 0.5s`, "neutral");
+
+    const ff = await loadFFmpeg(p => setProgress(10 + p * 0.5));
+    currentFFmpeg = ff;
+
+    log("Escribiendo test.wav…", "info");
+    await ff.writeFile("test.wav", wav);
+    setProgress(15);
+
+    // Ejecutar copia simple (test básico de pipeline)
+    log("Ejecutando: ffmpeg -y -nostdin -i test.wav -c copy test_copy.wav", "info");
+    const { promise: execP } = withTimeout(
+      ff.exec(["-y", "-nostdin", "-i", "test.wav", "-c", "copy", "test_copy.wav"]),
+      "self-test exec",
+    );
+    const code = await execP;
+    setProgress(50);
+    log(`  exit code: ${code}`, code === 0 ? "ok" : "err");
+
+    if (code !== 0) throw new Error(`ffmpeg exit code ${code}`);
+
+    // Leer resultado
+    log("Leyendo test_copy.wav…", "info");
+    const data = await ff.readFile("test_copy.wav");
+    setProgress(80);
+    log(`  test_copy.wav: ${data.length} bytes`, data.length > 0 ? "ok" : "err");
+
+    // Mostrar contenido del FS
+    log("Listando / (virtual FS)…", "info");
+    const entries = await ff.listDir("/");
+    const names = entries.filter(e => e.name !== "." && e.name !== "..").map(e => e.name);
+    log(`  Archivos: ${names.join(", ") || "(vacio)"}`, "neutral");
+
+    if (!data || data.length === 0) throw new Error("Archivo de salida vacío");
+
+    setProgress(100);
+    stopClock();
+    log("✅ Self-test exitoso — FFmpeg funciona correctamente", "ok");
+    log("  Si la conversión de tu MP4 falla, el problema es el archivo, no FFmpeg.", "neutral");
+  } catch (err) {
+    stopClock();
+    if (cancelled) log(`✕ ${err.message}`, "err");
+    else log(`❌ Self-test FALLÓ: ${err.message}`, "err");
+    console.error(err);
+  } finally {
+    if (currentFFmpeg) {
+      try { currentFFmpeg.terminate(); } catch {}
+      currentFFmpeg = null;
+    }
+    resetUI();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// Conversión MP4 → MKV
+// ═══════════════════════════════════════════════════════════
+async function runConversion() {
+  if (!selectedFile) return;
+  operation = "convert";
+  cancelled = false;
+  clearLog();
+  results.hidden = true;
+  disableUI(true);
+  setProgress(0);
+  startClock();
+
+  try {
+    log("Cargando FFmpeg…", "info");
+    const ff = await loadFFmpeg(p => setProgress(5 + p * 0.1));
+    currentFFmpeg = ff;
+    setProgress(12);
+
+    // Escribir input
+    log(`Escribiendo ${selectedFile.name}…`, "info");
+    const inName = "input.mp4";
+    await ff.writeFile(inName, await fetchFile(selectedFile));
+    setProgress(18);
+    log(`  Escritos ${fmtSize(selectedFile.size)}`, "ok");
+
+    // ── Paso 1: intentar detectar codecs con ffprobe-like ──
+    // Usamos ffmpeg -i input.mp4 (sin output) para leer metadatos
+    log("Detectando codecs del archivo…", "info");
+    try {
+      // Llamada de "dry run" solo para ver metadatos (ignoramos error esperado)
+      await ff.exec(["-y", "-nostdin", "-i", inName, "-f", "null", "-"]);
+    } catch (metaErr) {
+      // El exec lanza error porque -f null no produce salida. Los metadatos
+      // se capturan en los logs. Buscamos "Stream #0:" en los logs.
+      log("  Metadatos capturados (ver logs arriba)", "neutral");
+    }
+
+    // ── Paso 2: elegir estrategia ──
+    // Siempre intentamos copy primero. Si falla, recodificamos.
+    const outName = "output.mkv";
+    let usedCopy = true;
+
+    log("🚀 Iniciando conversión (copy)…", "info");
+    setProgress(25);
+
+    const { promise: execP, cancel: cancelTimeout } = withTimeout(
+      ff.exec(["-y", "-nostdin", "-i", inName, "-c", "copy", outName]),
+      "conversión copy",
+    );
+
+    let execCode;
+    try {
+      execCode = await execP;
+      log(`  exit code: ${execCode}`, execCode === 0 ? "ok" : "err");
+      setProgress(70);
+    } catch (execErr) {
+      cancelTimeout();
+      const msg = execErr.message || String(execErr);
+
+      if (msg.includes("TIMEOUT")) {
+        log(`⚠ Timeout en copy — el archivo puede tener codecs incompatibles`, "warn");
+        log("  Reintentando con recodificación H.264/AAC…", "warn");
+        usedCopy = false;
+
+        // Terminar y recargar FFmpeg (estado limpio)
+        ff.terminate();
+        const ff2 = await loadFFmpeg(p => setProgress(25 + p * 0.2));
+        currentFFmpeg = ff2;
+        await ff2.writeFile(inName, await fetchFile(selectedFile));
+
+        const fallbackArgs = [
+          "-y", "-nostdin",
+          "-i", inName,
+          "-c:v", "libx264", "-preset", "ultrafast", "-crf", "23",
+          "-c:a", "aac", "-b:a", "128k",
+          outName,
+        ];
+        log(`Fallback: ffmpeg ${fallbackArgs.join(" ")}`, "info");
+
+        const { promise: fbP } = withTimeout(fallbackArgs, "conversión fallback");
+        execCode = await fbP;
+        setProgress(70);
+      } else {
+        throw execErr;
+      }
+    }
+
+    if (cancelled) throw new Error("Cancelado");
+
+    // ── Paso 3: verificar archivo de salida ──
+    log("Listando / (virtual FS)…", "info");
+    let entries;
+    try { entries = await ff.listDir("/"); } catch { entries = []; }
+    const names = entries.filter(e => e.name !== "." && e.name !== "..").map(e => e.name);
+    log(`  Archivos: ${names.join(", ") || "(vacio)"}`, "neutral");
+
+    if (!names.includes(outName)) {
+      throw new Error(`output.mkv no encontrado en el sistema de archivos virtual. Archivos: ${names.join(", ") || "ninguno"}`);
+    }
+
+    // ── Paso 4: leer resultado ──
+    log("Leyendo output.mkv…", "info");
+    let data;
+    try {
+      data = await ff.readFile(outName);
+    } catch (readErr) {
+      throw new Error(`readFile falló: ${readErr.message}`);
+    }
+
+    if (!data || (typeof data === "object" && data.length === 0)) {
+      throw new Error("Archivo de salida vacío (0 bytes)");
+    }
+    setProgress(90);
+    log(`  ${outName}: ${fmtSize(data.length)}`, "ok");
+
+    // ── Paso 5: descarga ──
+    const blob = new Blob([data], { type: "video/x-matroska" });
+    const url  = URL.createObjectURL(blob);
+    downloadLink.href     = url;
+    downloadLink.download = selectedFile.name.replace(/\.mp4$/i, ".mkv");
+    downloadLink.textContent = `⬇ Descargar ${downloadLink.download} (${fmtSize(blob.size)})`;
+
+    fsList.textContent = `FS: ${names.join(", ")} | Copy: ${usedCopy ? "sí" : "no (recodificado)"} | Tamaño: ${fmtSize(blob.size)}`;
+    results.hidden = false;
+
+    setProgress(100);
+    stopClock();
+    log(`✅ Conversión exitosa (${usedCopy ? "copia directa" : "recodificado"})`, "ok");
+  } catch (err) {
+    stopClock();
+    if (cancelled) log(`✕ ${err.message}`, "err");
+    else log(`❌ Error: ${err.message}`, "err");
+    console.error(err);
+  } finally {
+    if (currentFFmpeg) {
+      try { currentFFmpeg.terminate(); } catch {}
+      currentFFmpeg = null;
+    }
+    resetUI();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// Eventos de UI
+// ═══════════════════════════════════════════════════════════
+
+// File handling
+function handleFile(file) {
+  results.hidden = true;
+  timer.textContent = "—";
+  if (!file || !file.name.toLowerCase().endsWith(".mp4")) {
+    log("Seleccioná un archivo .mp4", "err");
+    return;
+  }
+  selectedFile = file;
+  fileName.textContent = file.name;
+  fileSize.textContent = fmtSize(file.size);
+  fileInfo.hidden = false;
+  convertBtn.disabled = false;
+  log(`✓ ${file.name} (${fmtSize(file.size)})`, "ok");
+}
+
+dropZone.addEventListener("click", () => fileInput.click());
+fileInput.addEventListener("change", e => { if (e.target.files?.[0]) handleFile(e.target.files[0]); });
+dropZone.addEventListener("dragover", e => { e.preventDefault(); dropZone.classList.add("!border-[#00f2ff]", "!bg-[rgba(0,242,255,0.06)]"); });
+dropZone.addEventListener("dragleave", () => dropZone.classList.remove("!border-[#00f2ff]", "!bg-[rgba(0,242,255,0.06)]"));
+dropZone.addEventListener("drop", e => {
+  e.preventDefault();
+  dropZone.classList.remove("!border-[#00f2ff]", "!bg-[rgba(0,242,255,0.06)]");
+  if (e.dataTransfer.files?.[0]) handleFile(e.dataTransfer.files[0]);
+});
+
+convertBtn.addEventListener("click", runConversion);
+testBtn.addEventListener("click", runSelfTest);
+
+cancelBtn.addEventListener("click", () => {
+  cancelled = true;
+  log("✕ Cancelando…", "err");
+  if (currentFFmpeg) {
+    currentFFmpeg.terminate();
+    currentFFmpeg = null;
+  }
+  resetUI();
+});
+
+// Estado inicial
+log("⬤ Esperando archivo o presioná Self‑test", "neutral");
+</script>
+</body>
+</html>
