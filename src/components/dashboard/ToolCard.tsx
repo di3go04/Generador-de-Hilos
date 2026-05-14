@@ -1,91 +1,69 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Sparkles, Image, Video, QrCode, Palette, Type, ImagePlus, ScanText, Music, Maximize2, Mic, Code, Eraser, Waves } from "lucide-react";
-import type { ToolId } from "@/types";
+import * as Icons from "lucide-react";
+import { Sparkles, ArrowUpRight } from "lucide-react";
 
 interface ToolCardProps {
-  id: ToolId;
+  id: string;
   title: string;
   description: string;
   onClick: () => void;
   featured?: boolean;
 }
 
-const iconMap: Record<ToolId, React.ReactNode> = {
-  threads: <Sparkles className="w-5 h-5" />,
-  video: <Video className="w-5 h-5" />,
-  "image-gen": <ImagePlus className="w-5 h-5" />,
-  upscale: <Maximize2 className="w-5 h-5" />,
-  "remove-bg": <Eraser className="w-5 h-5" />,
-  stem: <Waves className="w-5 h-5" />,
-  voice: <Mic className="w-5 h-5" />,
-  code: <Code className="w-5 h-5" />,
-  image: <Image className="w-5 h-5" />,
-  audio: <Music className="w-5 h-5" />,
-  ocr: <ScanText className="w-5 h-5" />,
-  qr: <QrCode className="w-5 h-5" />,
-  palette: <Palette className="w-5 h-5" />,
-  text: <Type className="w-5 h-5" />,
-};
-
-const neonAccents: Record<ToolId, { icon: string; border: string; glow: string }> = {
-  threads:      { icon: "from-cyan-500 to-violet-600",  border: "border-cyan-500/20",  glow: "glow-cyan" },
-  video:        { icon: "from-rose-500 to-pink-600",    border: "border-rose-500/20",  glow: "glow-rose" },
-  "image-gen":  { icon: "from-violet-500 to-cyan-500",  border: "border-violet-500/20", glow: "glow-violet" },
-  upscale:      { icon: "from-emerald-500 to-teal-600", border: "border-emerald-500/20",glow: "glow-emerald" },
-  "remove-bg":  { icon: "from-blue-500 to-indigo-600",  border: "border-blue-500/20",  glow: "glow-violet" },
-  stem:         { icon: "from-purple-500 to-pink-500",   border: "border-purple-500/20", glow: "glow-violet" },
-  voice:        { icon: "from-cyan-400 to-blue-500",     border: "border-cyan-500/20",  glow: "glow-cyan" },
-  code:         { icon: "from-orange-500 to-amber-600",  border: "border-amber-500/20", glow: "glow-amber" },
-  image:        { icon: "from-emerald-500 to-teal-600",  border: "border-emerald-500/20",glow: "glow-emerald" },
-  audio:        { icon: "from-violet-500 to-purple-600", border: "border-violet-500/20", glow: "glow-violet" },
-  ocr:          { icon: "from-cyan-500 to-blue-600",     border: "border-cyan-500/20",  glow: "glow-cyan" },
-  qr:           { icon: "from-indigo-500 to-violet-600", border: "border-indigo-500/20", glow: "glow-violet" },
-  palette:      { icon: "from-amber-500 to-orange-600",  border: "border-amber-500/20", glow: "glow-amber" },
-  text:         { icon: "from-sky-500 to-cyan-600",      border: "border-sky-500/20",   glow: "glow-cyan" },
-};
-
-export default function ToolCard({ id, title, description, onClick, featured }: ToolCardProps) {
-  const accent = neonAccents[id];
+export default function ToolCard({ title, description, onClick, featured }: ToolCardProps) {
+  const IconComponent = (Icons as any)[title.split(' ')[0]] || Sparkles;
 
   return (
     <motion.button
-      whileHover={{ y: -4, scale: 1.02 }}
-      whileTap={{ scale: 0.97 }}
+      whileHover={{ y: -4 }}
+      whileTap={{ scale: 0.98 }}
       onClick={onClick}
-      className={`group relative w-full text-left rounded-xl transition-all duration-300 ${
-        featured
-          ? `bento-card-neon ${accent.glow}`
-          : "bento-card hover:shadow-lg"
-      }`}
+      className={`
+        group relative w-full text-left p-8 rounded-2xl glass-card
+        ${featured ? "md:col-span-2" : ""}
+        hover:border-brand-accent/20
+      `}
     >
-      {/* Neon top-border line on featured */}
-      {featured && (
-        <div className={`absolute top-0 left-4 right-4 h-[2px] rounded-full bg-gradient-to-r ${accent.icon} opacity-60`} />
-      )}
+      <div className="relative z-10 flex flex-col h-full justify-between gap-8">
+        <div className="flex justify-between items-start">
+          <div className={`
+            w-14 h-14 rounded-xl flex items-center justify-center transition-all duration-500
+            ${featured 
+              ? "bg-brand-accent text-white shadow-lg shadow-brand-accent/20" 
+              : "bg-black/5 dark:bg-white/5 text-brand-accent group-hover:bg-brand-accent group-hover:text-white group-hover:shadow-lg group-hover:shadow-brand-accent/20"}
+          `}>
+            <IconComponent className="w-7 h-7" />
+          </div>
+          
+          <div className="w-8 h-8 rounded-full border border-black/5 dark:border-white/5 flex items-center justify-center group-hover:bg-brand-accent group-hover:text-white transition-all duration-500">
+            <ArrowUpRight className="w-4 h-4" />
+          </div>
+        </div>
 
-      <div className={`flex items-center justify-center w-9 h-9 rounded-lg bg-gradient-to-br ${accent.icon} shadow-lg text-white mb-3`}>
-        {iconMap[id]}
+        <div className="space-y-2">
+          <h3 className="text-2xl font-bold tracking-tight">
+            {title}
+          </h3>
+          <p className="text-sm opacity-60 leading-relaxed">
+            {description}
+          </p>
+        </div>
+
+        <div className="flex items-center justify-between pt-4 border-t border-black/5 dark:border-white/5">
+          <div className="flex gap-2">
+            <span className="px-3 py-1 rounded-full bg-black/5 dark:bg-white/5 text-[9px] font-black uppercase tracking-widest opacity-40 group-hover:text-brand-accent group-hover:opacity-100 transition-all">
+              AI Engine v2
+            </span>
+            {featured && (
+              <span className="px-3 py-1 rounded-full bg-brand-secondary/10 text-[9px] font-black uppercase tracking-widest text-brand-secondary">
+                Más Popular
+              </span>
+            )}
+          </div>
+        </div>
       </div>
-      <h3 className={`font-semibold text-white/90 ${featured ? "text-base" : "text-sm"}`}>{title}</h3>
-      <p className={`text-xs text-white/40 leading-relaxed mt-1 ${featured ? "text-sm" : ""}`}>{description}</p>
-
-      {/* Hover neon radial glow */}
-      <div
-        className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-        style={{
-          background: `radial-gradient(400px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(0,242,255,0.06), transparent 40%)`,
-        }}
-      />
-
-      {/* Featured hover intensify glow */}
-      {featured && (
-        <div
-          className={`absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none ${accent.glow}`}
-          style={{ boxShadow: `inset 0 0 60px rgba(0,242,255,0.06)` }}
-        />
-      )}
     </motion.button>
   );
 }

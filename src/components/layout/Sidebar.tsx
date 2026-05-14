@@ -1,26 +1,14 @@
 "use client";
 
-import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Image, Video, QrCode, Palette, Type, ImagePlus, ScanText, Music, X, Maximize2, Mic, Code, Eraser, Waves } from "lucide-react";
-import ThemeToggle from "./ThemeToggle";
+import { motion } from "framer-motion";
+import { 
+  Sparkles, Video, ImagePlus, Maximize2, Eraser, 
+  Waves, Mic, Code, Image as ImageIcon, Music, 
+  X, UserCircle, Settings, ChevronRight
+} from "lucide-react";
 import type { ToolId } from "@/types";
 
-const toolItems: { id: ToolId; label: string; icon: React.ReactNode; group: string }[] = [
-  { id: "threads", label: "Hilos IA", icon: <Sparkles className="w-4 h-4" />, group: "IA" },
-  { id: "image-gen", label: "Imagen IA", icon: <ImagePlus className="w-4 h-4" />, group: "IA" },
-  { id: "voice", label: "Voz a Texto", icon: <Mic className="w-4 h-4" />, group: "IA" },
-  { id: "video", label: "Video Pro", icon: <Video className="w-4 h-4" />, group: "Media" },
-  { id: "image", label: "Imágenes", icon: <Image className="w-4 h-4" />, group: "Media" },
-  { id: "upscale", label: "Upscaler", icon: <Maximize2 className="w-4 h-4" />, group: "Media" },
-  { id: "remove-bg", label: "Sin Fondo", icon: <Eraser className="w-4 h-4" />, group: "Media" },
-  { id: "stem", label: "Stems", icon: <Waves className="w-4 h-4" />, group: "Audio" },
-  { id: "audio", label: "Limpiador", icon: <Music className="w-4 h-4" />, group: "Audio" },
-  { id: "code", label: "Código", icon: <Code className="w-4 h-4" />, group: "Texto" },
-  { id: "text", label: "Texto", icon: <Type className="w-4 h-4" />, group: "Texto" },
-  { id: "qr", label: "QR Pro", icon: <QrCode className="w-4 h-4" />, group: "Utilidades" },
-  { id: "palette", label: "Paleta", icon: <Palette className="w-4 h-4" />, group: "Utilidades" },
-  { id: "ocr", label: "OCR", icon: <ScanText className="w-4 h-4" />, group: "Utilidades" },
-];
+import { ThemeToggle } from "./ThemeToggle";
 
 interface SidebarProps {
   activeTool: ToolId | null;
@@ -29,86 +17,137 @@ interface SidebarProps {
   onMobileClose: () => void;
 }
 
-const groups = Array.from(new Set(toolItems.map((t) => t.group)));
+const menuGroups = [
+  {
+    label: "Creatividad IA",
+    items: [
+      { id: "threads", label: "Hilos IA", icon: Sparkles },
+      { id: "image-gen", label: "Imagen IA", icon: ImagePlus },
+      { id: "video", label: "Video Pro", icon: Video },
+    ]
+  },
+  {
+    label: "Edición Visual",
+    items: [
+      { id: "upscale", label: "Upscaler", icon: Maximize2 },
+      { id: "remove-bg", label: "Sin Fondo", icon: Eraser },
+    ]
+  },
+  {
+    label: "Audio & Voz",
+    items: [
+      { id: "stem", label: "Stems", icon: Waves },
+      { id: "voice", label: "Voz a Texto", icon: Mic },
+    ]
+  }
+];
 
 export default function Sidebar({ activeTool, onToolChange, mobileOpen, onMobileClose }: SidebarProps) {
-  const isActive = (id: ToolId) => activeTool === id || (!activeTool && id === "threads");
-
   return (
     <>
-      <AnimatePresence>
-        {mobileOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onMobileClose}
-            className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm md:hidden"
-          />
-        )}
-      </AnimatePresence>
+      <div 
+        className={`fixed inset-0 z-40 bg-black/20 backdrop-blur-sm md:hidden transition-opacity ${mobileOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+        onClick={onMobileClose}
+      />
 
       <aside className={`
-        fixed top-0 left-0 z-50 h-full w-64
-        md:translate-x-0 md:static md:z-auto
-        transition-transform duration-300 ease-out
-        ${mobileOpen ? "translate-x-0" : "-translate-x-full"}
+        fixed top-0 left-0 bottom-0 z-50 w-72 m-4
+        flex flex-col gap-6
+        transition-transform duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]
+        md:translate-x-0 ${mobileOpen ? "translate-x-0" : "-translate-x-[calc(100%+2rem)]"}
       `}>
-        <div className="flex flex-col h-full glass-strong border-r border-white/[0.04]">
-          <div className="flex items-center justify-between px-4 h-14 border-b border-white/[0.04]">
-            <div className="flex items-center gap-2.5">
-              <div className="flex items-center justify-center w-7 h-7 rounded-lg gradient-cyan-violet shadow-lg shadow-cyan-500/20">
-                <Sparkles className="w-3.5 h-3.5 text-white" />
-              </div>
-              <div>
-                <h1 className="text-sm font-bold tracking-tight text-white">Urban</h1>
-                <p className="text-[9px] text-white/30 -mt-0.5">Creative Suite</p>
-              </div>
+        {/* Logo Card */}
+        <div className="glass-card rounded-2xl p-6 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-brand-accent flex items-center justify-center shadow-sm">
+              <Sparkles className="w-6 h-6 text-white" />
             </div>
-            <div className="flex items-center gap-1">
-              <ThemeToggle />
-              <button onClick={onMobileClose} className="md:hidden flex items-center justify-center w-7 h-7 rounded-lg text-white/30 hover:text-white/70">
-                <X className="w-3.5 h-3.5" />
-              </button>
+            <div>
+              <h1 className="text-xl font-bold tracking-tight">Urban</h1>
+              <p className="text-[9px] uppercase tracking-widest text-brand-accent/60 font-black">Studio</p>
             </div>
           </div>
+          <button onClick={onMobileClose} className="md:hidden p-2 opacity-40">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
 
-          <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-4">
-            {groups.map((group) => (
-              <div key={group}>
-                <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-widest text-white/20">{group}</p>
-                <div className="space-y-0.5">
-                  {toolItems.filter((t) => t.group === group).map(({ id, label, icon }, i) => (
-                    <motion.button
-                      key={id}
-                      initial={{ opacity: 0, x: -16 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.02 }}
-                      onClick={() => { onToolChange(id); onMobileClose(); }}
-                      className={`relative w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
-                        isActive(id)
-                          ? "text-white"
-                          : "text-white/30 hover:text-white/60 hover:bg-white/[0.03]"
-                      }`}
+        {/* Navigation Groups */}
+        <nav className="flex-1 overflow-y-auto custom-scrollbar space-y-4 pr-1">
+          {menuGroups.map((group, idx) => (
+            <div key={idx} className="glass-card rounded-2xl p-4 space-y-3">
+              <h3 className="text-[10px] uppercase tracking-[0.2em] font-black opacity-20 px-2">
+                {group.label}
+              </h3>
+              <div className="space-y-1">
+                {group.items.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = activeTool === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => onToolChange(item.id as ToolId)}
+                      className={`
+                        w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-300
+                        ${isActive 
+                          ? "nav-item-active shadow-sm" 
+                          : "text-text-body/60 hover:bg-black/5 dark:hover:bg-white/5 hover:text-text-heading hover:translate-x-1"}
+                      `}
                     >
-                      {isActive(id) && (
-                        <motion.div
-                          layoutId="sidebar-active"
-                          className="absolute inset-0 rounded-lg bg-gradient-to-r from-cyan-500/10 to-violet-500/10 border border-cyan-500/15"
-                          transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                        />
-                      )}
-                      <span className={`relative z-10 ${isActive(id) ? "text-cyan-300" : ""}`}>{icon}</span>
-                      <span className="relative z-10">{label}</span>
-                    </motion.button>
-                  ))}
-                </div>
+                      <Icon className={`w-4 h-4 ${isActive ? "text-brand-accent" : "text-text-body/40"}`} />
+                      <span className="text-sm font-semibold">{item.label}</span>
+                      <ChevronRight className={`ml-auto w-3 h-3 transition-transform ${isActive ? "rotate-90" : "opacity-10"}`} />
+                    </button>
+                  );
+                })}
               </div>
-            ))}
-          </nav>
+            </div>
+          ))}
+        </nav>
 
-          <div className="px-4 py-3 border-t border-white/[0.04]">
-            <p className="text-[9px] text-white/15 text-center">The RW Flow</p>
+        {/* Footer Actions & Profile */}
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center justify-between gap-3">
+            <ThemeToggle />
+            <button className="flex-1 glass-card rounded-xl p-2.5 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest hover:text-brand-accent transition-colors">
+              <Settings className="w-4 h-4" />
+              Configurar
+            </button>
+          </div>
+
+          <div className="glass-card rounded-2xl p-5 space-y-4">
+            <div className="flex items-center gap-4">
+              <div className="relative w-10 h-10 flex items-center justify-center">
+                <svg className="w-full h-full -rotate-90">
+                  <circle cx="20" cy="20" r="18" className="stroke-black/5 dark:stroke-white/5 fill-none" strokeWidth="3" />
+                  <motion.circle 
+                     cx="20" cy="20" r="18" 
+                     className="stroke-brand-accent fill-none" 
+                     strokeWidth="3"
+                     strokeLinecap="round"
+                     strokeDasharray="113"
+                     initial={{ strokeDashoffset: 113 }}
+                     animate={{ strokeDashoffset: 113 - (113 * 0.65) }}
+                     transition={{ duration: 2, ease: "circOut" }}
+                  />
+                </svg>
+                <span className="absolute text-[9px] font-bold text-brand-accent">65%</span>
+              </div>
+              <div className="flex-1">
+                <p className="text-[9px] font-black uppercase tracking-widest text-brand-accent">Uso IA</p>
+                <p className="text-[9px] opacity-40 font-bold italic">Pro Plan</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 pt-3 border-t border-black/5 dark:border-white/5">
+              <div className="w-9 h-9 rounded-xl bg-black/5 dark:bg-white/5 flex items-center justify-center text-text-heading font-bold">
+                MC
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-bold truncate">Mafer Clavijo</p>
+                <p className="text-[10px] opacity-40">Editora Jefe</p>
+              </div>
+            </div>
           </div>
         </div>
       </aside>

@@ -68,7 +68,23 @@ export default function ImageGenerator() {
       </motion.button>
 
       {error && (
-        <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-400">{error}</div>
+        <motion.div
+          initial={{ opacity: 0, x: -10 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 flex gap-3 items-start"
+        >
+          <div className="w-8 h-8 rounded-full bg-amber-500/10 flex items-center justify-center shrink-0">
+            <AlertTriangle className="w-4 h-4 text-amber-500" />
+          </div>
+          <div className="space-y-1">
+            <p className="text-sm font-medium text-amber-200/90">Algo no salió como esperábamos</p>
+            <p className="text-xs text-amber-200/50 leading-relaxed">
+              {error.toLowerCase().includes("503") || error.toLowerCase().includes("service") 
+                ? "El motor creativo está tomando un respiro debido a la alta demanda. Por favor, inténtalo de nuevo en unos segundos."
+                : error}
+            </p>
+          </div>
+        </motion.div>
       )}
 
       {imageUrl && (
