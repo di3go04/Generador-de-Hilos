@@ -34,3 +34,28 @@ export interface ConversionJob {
   progress: number;
   createdAt: string;
 }
+
+export interface PaletteColor {
+  hex: string;
+  name: string;
+  type: string;
+  rgb?: { r: number; g: number; b: number };
+  hsl?: { h: number; s: number; l: number };
+}
+
+export type OutputImageFormat = "png" | "jpg" | "jpeg" | "webp";
+
+export type QRContentType = "url" | "text" | "wifi" | "vcard" | "email";
+
+export interface QROptions {
+  content: string;
+  type: QRContentType;
+  size?: number;
+  margin?: number;
+  color?: {
+    dark: string;
+    light: string;
+  };
+}
+
+export type Tone = "professional" | "casual" | "educational" | "viral" | "storytelling";

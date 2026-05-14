@@ -1,0 +1,16 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/publish-scheduled",
+      "schedule": "*/5 * * * *"
+    }
+  ],
+  "functions": {
+    "src/app/api/v1/**": {
+      "maxDuration": 30
+    },
+    "src/app/api/threads/generate/**": {
+      "maxDuration": 60
+    }
+  }
+}

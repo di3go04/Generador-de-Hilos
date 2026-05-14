@@ -62,9 +62,14 @@ export function extractPalette(
     .sort((a, b) => b.count - a.count)
     .slice(0, colorCount);
 
-  return sorted.map(({ r, g, b }) => ({
-    hex: rgbToHex(r, g, b),
-    rgb: { r, g, b },
-    hsl: rgbToHsl(r, g, b),
-  }));
+  return sorted.map(({ r, g, b }) => {
+    const hex = rgbToHex(r, g, b);
+    return {
+      hex,
+      name: hex,
+      type: "extracted",
+      rgb: { r, g, b },
+      hsl: rgbToHsl(r, g, b),
+    };
+  });
 }

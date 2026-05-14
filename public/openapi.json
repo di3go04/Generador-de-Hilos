@@ -1,0 +1,65 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Generador de Hilos API",
+    "version": "1.0.0",
+    "description": "API pública para la generación de hilos virales utilizando IA."
+  },
+  "servers": [
+    { "url": "https://generadordehilos.com/api/v1", "description": "Producción" }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": { "type": "http", "scheme": "bearer" }
+    },
+    "schemas": {
+      "ThreadRequest": {
+        "type": "object",
+        "required": ["topic"],
+        "properties": {
+          "topic": { "type": "string", "example": "Cómo aprender Next.js en 2025" },
+          "tone": { "type": "string", "enum": ["professional", "casual", "educational", "viral", "storytelling"], "default": "professional" },
+          "language": { "type": "string", "enum": ["es", "en"], "default": "es" },
+          "tweetCount": { "type": "integer", "minimum": 3, "maximum": 20, "default": 7 }
+        }
+      },
+      "ThreadResponse": {
+        "type": "object",
+        "properties": {
+          "thread": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "title": { "type": "string" },
+              "tweets": { "type": "array", "items": { "type": "string" } }
+            }
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "remaining": { "type": "integer" },
+              "reset": { "type": "integer" }
+            }
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/threads": {
+      "post": {
+        "summary": "Generar un nuevo hilo",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ThreadRequest" } } }
+        },
+        "responses": {
+          "200": { "description": "Hilo generado con éxito", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ThreadResponse" } } } },
+          "401": { "description": "API key inválida" },
+          "429": { "description": "Rate limit excedido" }
+        }
+      }
+    }
+  }
+}

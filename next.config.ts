@@ -1,27 +1,27 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Turbopack config: resolve .wasm and point to correct root
-  turbopack: {
-    resolveExtensions: [".wasm", ".tsx", ".ts", ".jsx", ".js", ".mjs", ".json"],
-    root: process.cwd(),
+  // Removed Turbopack WASM config (ffmpeg moved to backend)
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "avatars.githubusercontent.com" },
+      { protocol: "https", hostname: "lh3.googleusercontent.com" },
+      { protocol: "https", hostname: "*.googleusercontent.com" },
+    ],
   },
-
-  // ── HTTP Headers ─────────────────────────────────────────────
-  // Required for ffmpeg.wasm SharedArrayBuffer + Cross-Origin Isolation
+  // Required for Stripe webhooks — raw body
   async headers() {
     return [
-      // Entire app: cross-origin isolation headers
       {
-        source: "/:path*",
-        headers: [
-          // Required for SharedArrayBuffer (ffmpeg.wasm multi-thread)
-          { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
-          // credentialless = enables SharedArrayBuffer without breaking
-          // third-party CDN resources (fonts, images, etc.)
-          { key: "Cross-Origin-Embedder-Policy", value: "credentialless" },
-        ],
+        source: "/api/webhooks/:path*",
+        headers: [{ key: "x-content-type-options", value: "nosniff" }],
       },
+    ];
+  },
+  // Redirect old routes
+  async redirects() {
+    return [
+      { source: "/home", destination: "/", permanent: true },
     ];
   },
 };

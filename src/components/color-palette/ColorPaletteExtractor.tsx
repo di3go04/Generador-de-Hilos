@@ -93,7 +93,7 @@ export default function ColorPaletteExtractor() {
                     <div className="w-8 h-8 rounded-lg shrink-0 border border-slate-200" style={{ backgroundColor: color.hex }} />
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-mono text-slate-700 dark:text-slate-300 truncate">{color.hex}</p>
-                      <p className="text-xs text-slate-400">{color.rgb.r}, {color.rgb.g}, {color.rgb.b}</p>
+                      <p className="text-xs text-slate-400">{color.rgb!.r}, {color.rgb!.g}, {color.rgb!.b}</p>
                     </div>
                     {copiedIndex === i ? <Check className="w-3 h-3 text-emerald-500 shrink-0" /> : <Copy className="w-3 h-3 text-slate-400 shrink-0" />}
                   </button>

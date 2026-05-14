@@ -1,137 +1,81 @@
-@import "tailwindcss";
-
-@theme {
-  /* ── Refined Professional Palette ─────────────────────────── */
-  
-  /* Main Accent - Professional Indigo */
-  --color-brand-accent: #4F46E5;        
-  --color-brand-accent-hover: #4338CA;
-  
-  /* Warm Highlight - Terracota (Use sparingly) */
-  --color-brand-warm: #E07A5F;
-  
-  /* Success - Emerald */
-  --color-brand-success: #10B981;
-  
-  /* Surfaces */
-  --color-bg-main: #FAFAF9;
-  --color-bg-surface: #FFFFFF;
-  --color-border-subtle: rgba(0, 0, 0, 0.05);
-  --color-text-heading: #111827;
-  --color-text-body: #4B5563;
-  --color-text-muted: #9CA3AF;
-  
-  /* Shared Tokens */
-  --shadow-premium: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-  --shadow-premium-hover: 0 10px 25px -5px rgb(0 0 0 / 0.05), 0 8px 10px -6px rgb(0 0 0 / 0.05);
-  --radius-xl: 1rem;
-  --radius-2xl: 1.5rem;
-}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 @layer base {
   :root {
-    --bg-main: #FAFAF9;
-    --bg-surface: #FFFFFF;
-    --text-heading: #111827;
-    --text-body: #4B5563;
-    --border-main: rgba(0, 0, 0, 0.06);
-    --glass-bg: rgba(255, 255, 255, 0.7);
-    --glass-border: rgba(0, 0, 0, 0.04);
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
+    --radius: 0.5rem;
   }
 
   .dark {
-    --bg-main: #0B0C10;
-    --bg-surface: #14161C;
-    --text-heading: #F9FAFB;
-    --text-body: #9CA3AF;
-    --border-main: rgba(255, 255, 255, 0.08);
-    --glass-bg: rgba(20, 22, 28, 0.7);
-    --glass-border: rgba(255, 255, 255, 0.06);
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.3% 48%;
   }
+}
 
+@layer base {
+  * {
+    @apply border-border;
+  }
   body {
-    background-color: var(--bg-main);
-    color: var(--text-body);
-    @apply transition-colors duration-500 ease-in-out antialiased selection:bg-brand-accent/20;
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
-  }
-
-  h1, h2, h3, h4, h5, h6 {
-    color: var(--text-heading);
-    @apply font-bold tracking-tight;
+    @apply bg-background text-foreground antialiased selection:bg-blue-500/20;
+    font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
 
-@layer components {
-  .glass-card {
-    background-color: var(--glass-bg);
-    backdrop-filter: blur(12px);
-    border: 1px solid var(--glass-border);
-    box-shadow: var(--shadow-premium);
-    @apply transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)];
-  }
-
-  .glass-card:hover {
-    box-shadow: var(--shadow-premium-hover);
-    border-color: var(--border-main);
-  }
-
-  .btn-primary {
-    @apply px-6 py-3 rounded-xl font-semibold bg-brand-accent text-white 
-           transition-all duration-300 hover:bg-brand-accent-hover 
-           active:scale-95 shadow-sm shadow-brand-accent/20 flex items-center justify-center gap-2;
-  }
-
-  .btn-warm {
-    @apply px-6 py-3 rounded-xl font-semibold bg-brand-warm text-white 
-           transition-all duration-300 hover:opacity-90 
-           active:scale-95 flex items-center justify-center gap-2;
-  }
-
-  .btn-ghost {
-    @apply px-4 py-2 rounded-lg transition-all duration-200 
-           text-text-body hover:bg-black/5 dark:hover:bg-white/5 
-           hover:text-text-heading flex items-center gap-2;
-  }
-
-  .nav-item {
-    @apply flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-300
-           text-text-body hover:text-text-heading;
-  }
-
-  .nav-item-active {
-    @apply bg-brand-accent/10 text-brand-accent font-bold;
-  }
-
-  /* Custom Scrollbar */
-  .custom-scrollbar::-webkit-scrollbar {
-    width: 5px;
-  }
-  .custom-scrollbar::-webkit-scrollbar-track {
-    @apply bg-transparent;
-  }
-  .custom-scrollbar::-webkit-scrollbar-thumb {
-    @apply bg-text-muted/20 rounded-full hover:bg-text-muted/40 transition-colors;
-  }
+/* Custom UI Classes */
+.glass-nav {
+  @apply sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-md;
 }
 
-/* ── Mesh Background ───────────────────────────────────────── */
-.mesh-bg {
-  position: fixed;
-  inset: 0;
-  z-index: -10;
-  pointer-events: none;
-  overflow: hidden;
+.btn-primary {
+  @apply inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2;
 }
 
-.mesh-blob {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(120px);
-  opacity: 0.12;
-  transition: all 1s ease-in-out;
+.btn-outline {
+  @apply inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors border border-input bg-background hover:bg-accent hover:text-accent-foreground px-4 py-2;
 }
 
-.dark .mesh-blob {
-  opacity: 0.05;
+.card-tool {
+  @apply rounded-xl border bg-card text-card-foreground shadow-sm transition-all hover:shadow-md hover:border-primary/50 p-6 flex flex-col h-full;
+}
+
+.tool-icon {
+  @apply w-10 h-10 rounded-lg bg-secondary flex items-center justify-center text-xl mb-4 transition-transform group-hover:scale-110;
 }

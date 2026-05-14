@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   ImagePlus, Sparkles, Wand2, Download, 
   RefreshCw, Layers, Palette, Maximize2, 
-  Loader2, CheckCircle2, Trash2, MagicWand,
+  Loader2, CheckCircle2, Trash2,
   Monitor, Zap, Globe, Share2, Edit3
 } from "lucide-react";
 

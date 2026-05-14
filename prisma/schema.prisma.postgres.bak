@@ -1,0 +1,229 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  engineType = "library"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Plan {
+  FREE
+  PRO
+  ENTERPRISE
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum ThreadStatus {
+  DRAFT
+  PUBLISHED
+  SCHEDULED
+  FAILED
+}
+
+model User {
+  id             String    @id @default(cuid())
+  name           String?
+  email          String    @unique
+  emailVerified  DateTime?
+  image          String?
+  password       String?
+  role           Role      @default(USER)
+  plan           Plan      @default(FREE)
+  banned         Boolean   @default(false)
+  stripeCustomerId String? @unique
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  accounts       Account[]
+  sessions       Session[]
+  threads        Thread[]
+  folders        Folder[]
+  apiKeys        ApiKey[]
+  subscription   Subscription?
+  usageRecords   UsageRecord[]
+  scheduledPosts ScheduledPost[]
+  twitterToken   TwitterToken?
+  adminLogs      AdminLog[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+model Thread {
+  id          String       @id @default(cuid())
+  userId      String
+  folderId    String?
+  title       String
+  topic       String
+  content     String[]     // Array of tweets
+  tone        String       @default("professional")
+  language    String       @default("es")
+  status      ThreadStatus @default(DRAFT)
+  publishedAt DateTime?
+  twitterIds  String[]     // IDs of published tweets
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  folder        Folder?        @relation(fields: [folderId], references: [id])
+  scheduledPost ScheduledPost?
+
+  @@map("threads")
+}
+
+model Folder {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  color     String   @default("#4F46E5")
+  createdAt DateTime @default(now())
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  threads Thread[]
+
+  @@map("folders")
+}
+
+model ApiKey {
+  id        String    @id @default(cuid())
+  userId    String
+  name      String
+  key       String    @unique
+  lastUsed  DateTime?
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("api_keys")
+}
+
+model Subscription {
+  id                   String    @id @default(cuid())
+  userId               String    @unique
+  stripeSubscriptionId String    @unique
+  stripePriceId        String
+  stripeCurrentPeriodEnd DateTime
+  cancelAtPeriodEnd    Boolean   @default(false)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}
+
+model UsageRecord {
+  id        String   @id @default(cuid())
+  userId    String
+  metric    String   // "thread_generated", "api_call"
+  quantity  Int      @default(1)
+  month     Int      // 1-12
+  year      Int
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("usage_records")
+}
+
+model ScheduledPost {
+  id          String    @id @default(cuid())
+  userId      String
+  threadId    String    @unique
+  scheduledAt DateTime
+  publishedAt DateTime?
+  status      String    @default("pending") // pending, published, failed
+  error       String?
+  createdAt   DateTime  @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  thread Thread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+  @@map("scheduled_posts")
+}
+
+model TwitterToken {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  accessToken  String   @db.Text // encrypted
+  refreshToken String?  @db.Text // encrypted
+  expiresAt    DateTime?
+  twitterId    String?
+  username     String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("twitter_tokens")
+}
+
+model AdminLog {
+  id        String   @id @default(cuid())
+  adminId   String
+  action    String
+  target    String?
+  details   String?  @db.Text
+  createdAt DateTime @default(now())
+
+  admin User @relation(fields: [adminId], references: [id])
+
+  @@map("admin_logs")
+}
+
+model NewsletterLead {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  source    String?  @default("landing")
+  createdAt DateTime @default(now())
+
+  @@map("newsletter_leads")
+}
