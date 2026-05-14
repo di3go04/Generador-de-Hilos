@@ -1,0 +1,14 @@
+{
+  "name": "urban-suite-root",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "install-all": "npm install --prefix backend && npm install --prefix urban",
+    "dev": "npx concurrently \"npm --prefix backend run dev\" \"npm --prefix urban run dev\" \"npx tsx backend/worker/process.ts\" --names \"API,APP,WRK\" --colors \"cyan,magenta,yellow\"",
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix urban run dev"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}
