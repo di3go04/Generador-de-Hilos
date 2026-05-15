@@ -118,7 +118,7 @@ export default function PublicToolPage({ params }: { params: Promise<{ slug: str
       </main>
 
       <footer className="py-12 text-center text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/50">
-        HerramientasPro &bull; Producto de Software Profesional &bull; 2026
+        Urban &bull; Producto de Software Profesional &bull; 2026
       </footer>
     </div>
   );

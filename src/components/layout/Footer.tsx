@@ -14,7 +14,7 @@ export default function Footer() {
             <div className="w-8 h-8 rounded-xl bg-brand-terracota flex items-center justify-center">
               <Sparkles className="w-4 h-4 text-white" />
             </div>
-            <span className="text-xl font-black text-brand-earth tracking-tighter">Urban Studio</span>
+            <span className="text-xl font-black text-brand-earth tracking-tighter">Urban</span>
           </div>
           <p className="text-xs text-brand-earth/40 font-medium max-w-xs text-center md:text-left">
             La suite creativa definitiva que combina potencia IA con una estética humana y orgánica.
@@ -48,7 +48,7 @@ export default function Footer() {
           <a href="#" className="hover:text-brand-terracota transition-colors">Privacidad</a>
           <a href="#" className="hover:text-brand-terracota transition-colors">API</a>
         </div>
-        <p>© 2026 Urban Creative Suite. Todos los derechos reservados.</p>
+        <p>© 2026 Urban. Todos los derechos reservados.</p>
       </div>
     </footer>
   );

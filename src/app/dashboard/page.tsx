@@ -1,8 +1,7 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import { Navbar } from "@/components/Navbar";
-import { ToolsGrid } from "@/components/ToolsGrid";
-import { CheckCircle2, Zap, ShieldCheck, History } from "lucide-react";
+import { CheckCircle2, Zap, ShieldCheck, History, MessageSquare } from "lucide-react";
+import { ThreadList } from "@/components/dashboard/ThreadList";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -75,13 +74,30 @@ export default async function DashboardPage() {
 
         {/* Tools Grid */}
         <div className="space-y-6">
-          <h2 className="text-2xl font-bold tracking-tight px-1">Tu Suite Digital</h2>
+          <div className="flex items-center justify-between px-1">
+            <h2 className="text-2xl font-bold tracking-tight">Tu Suite Digital</h2>
+          </div>
           <ToolsGrid isLoggedIn={true} />
+        </div>
+
+        {/* Recent Threads */}
+        <div className="space-y-6 pt-10 border-t border-slate-200/50 dark:border-white/5">
+          <div className="flex items-center justify-between px-1">
+            <div>
+              <h2 className="text-2xl font-bold tracking-tight">Mis Hilos Recientes</h2>
+              <p className="text-sm text-muted-foreground font-medium">Gestiona y organiza tu contenido generado.</p>
+            </div>
+            <Link href="/dashboard/threads/new" className="btn-primary py-2.5 px-5 text-sm font-bold flex items-center gap-2">
+               <MessageSquare className="w-4 h-4" />
+               Nuevo Hilo
+            </Link>
+          </div>
+          <ThreadList />
         </div>
       </main>
 
       <footer className="py-10 text-center text-xs text-muted-foreground font-medium">
-        HerramientasPro Dashboard &bull; Versión 1.0.0
+        Urban &bull; Versión 1.0.0
       </footer>
     </div>
   );

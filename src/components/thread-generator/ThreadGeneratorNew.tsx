@@ -31,6 +31,15 @@ export default function ThreadGeneratorNew() {
   const [saving, setSaving] = useState(false);
   const [scheduling, setScheduling] = useState(false);
   const [scheduleDate, setScheduleDate] = useState("");
+  const [categories, setCategories] = useState<any[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+
+  useState(() => {
+    fetch("/api/categories")
+      .then(res => res.json())
+      .then(data => setCategories(data.categories || []))
+      .catch(() => {});
+  });
 
   async function generate() {
     if (!topic.trim()) { toast.error("Escribe un tema para el hilo"); return; }
@@ -61,6 +70,7 @@ export default function ThreadGeneratorNew() {
           title: result.title, topic, content: result.tweets, tone,
           language, status: scheduleAt ? "SCHEDULED" : publish ? "PUBLISHED" : "DRAFT",
           scheduleAt,
+          categoryIds: selectedCategories,
         }),
       });
       const data = await res.json();
@@ -141,6 +151,43 @@ export default function ThreadGeneratorNew() {
             </div>
           </div>
         </div>
+
+        {/* Categories Selection */}
+        {categories.length > 0 && (
+          <div className="space-y-3">
+            <label className="block text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">
+              Asignar Categorías
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {categories.map((cat) => {
+                const isSelected = selectedCategories.includes(cat.id);
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => {
+                      setSelectedCategories(prev => 
+                        prev.includes(cat.id) ? prev.filter(id => id !== cat.id) : [...prev, cat.id]
+                      );
+                    }}
+                    className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all border flex items-center gap-2 ${
+                      isSelected 
+                        ? "shadow-md scale-105" 
+                        : "bg-white dark:bg-white/5 text-[var(--text-muted)] border-[var(--border-main)] hover:border-indigo-500/50"
+                    }`}
+                    style={isSelected ? {
+                      backgroundColor: cat.color,
+                      color: "white",
+                      borderColor: cat.color,
+                    } : {}}
+                  >
+                    <div className={`w-1.5 h-1.5 rounded-full ${isSelected ? "bg-white" : ""}`} style={!isSelected ? { backgroundColor: cat.color } : {}} />
+                    {cat.name}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Tweet count + toggles */}
         <div className="flex flex-wrap items-center gap-4">

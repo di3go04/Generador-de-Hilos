@@ -8,12 +8,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard, Settings, LogOut, ChevronRight,
   Menu, X, Crown, Sun, Moon,
-  Terminal, ShieldCheck, UserCircle
+  Terminal, ShieldCheck, UserCircle, Tag
 } from "lucide-react";
 import { useTheme } from "next-themes";
 
 const navItems = [
   { href: "/dashboard", label: "Suite de Herramientas", icon: LayoutDashboard },
+  { href: "/dashboard/categories", label: "Categorías", icon: Tag },
   { href: "/dashboard/usage", label: "Mi Consumo", icon: Terminal },
   { href: "/dashboard/perfil", label: "Perfil & Suscripción", icon: UserCircle },
   { href: "/dashboard/admin", label: "Administración", icon: ShieldCheck, adminOnly: true },

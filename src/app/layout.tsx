@@ -7,8 +7,8 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
-  title: "HerramientasPro | Utilidades digitales profesionales",
-  description: "10 herramientas digitales esenciales sin registro y en modo oscuro.",
+  title: "Urban | Utilidades digitales profesionales",
+  description: "Urban — 30 herramientas digitales esenciales, sin registro, en modo oscuro.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

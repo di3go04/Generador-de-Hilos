@@ -1,7 +1,7 @@
 import { Navbar } from "@/components/Navbar";
 import { ToolsGrid } from "@/components/ToolsGrid";
 import { auth } from "@/auth";
-import { Sparkles, ArrowRight, ShieldCheck, Zap, ServerOff, CheckCircle2 } from "lucide-react";
+import { Sparkles, ArrowRight, ShieldCheck, Zap, ServerOff, CheckCircle2, Tag } from "lucide-react";
 import Link from "next/link";
 
 export const runtime = "nodejs";
@@ -57,7 +57,7 @@ export default async function LandingPage() {
         <section className="py-24 px-6 bg-white dark:bg-slate-900 border-y border-slate-200 dark:border-slate-800">
           <div className="max-w-7xl mx-auto">
             <div className="text-center max-w-2xl mx-auto mb-16">
-              <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-4">¿Por qué elegir HerramientasPro?</h2>
+              <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-4">¿Por qué elegir Urban?</h2>
               <p className="text-lg text-slate-600 dark:text-slate-400">Diseñadas pensando en la eficiencia, seguridad y experiencia de usuario.</p>
             </div>
 
@@ -90,6 +90,80 @@ export default async function LandingPage() {
                 <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
                   Al no depender de tiempos de subida y bajada, las conversiones ocurren en fracciones de segundo. WebAssembly a tu servicio.
                 </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Categories Feature Section */}
+        <section className="py-24 px-6 overflow-hidden">
+          <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-16">
+            <div className="flex-1 space-y-6">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-xs font-bold uppercase tracking-widest">
+                <Tag className="w-3.5 h-3.5" />
+                <span>Organización Inteligente</span>
+              </div>
+              <h2 className="text-4xl md:text-5xl font-black text-slate-900 dark:text-white leading-tight">
+                Organiza tus hilos por <span className="text-indigo-600">Categorías</span>
+              </h2>
+              <p className="text-lg text-slate-600 dark:text-slate-400 font-medium">
+                No pierdas el control de tu contenido. Crea etiquetas personalizadas con colores únicos para clasificar tus hilos por temas, clientes o proyectos.
+              </p>
+              <ul className="space-y-4">
+                {[
+                  "Filtrado dinámico en el dashboard",
+                  "Múltiples categorías por hilo",
+                  "Badges de colores para identificación rápida",
+                  "Gestión centralizada de etiquetas"
+                ].map((item, i) => (
+                  <li key={i} className="flex items-center gap-3 text-slate-700 dark:text-slate-300 font-bold">
+                    <div className="w-5 h-5 rounded-full bg-green-500/10 text-green-500 flex items-center justify-center flex-shrink-0">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                    </div>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            
+            <div className="flex-1 relative">
+              <div className="absolute -inset-4 bg-indigo-500/10 blur-3xl rounded-full opacity-50" />
+              <div className="relative glass-card border-[var(--border-main)] rounded-[3rem] p-8 shadow-2xl shadow-indigo-500/10">
+                <div className="flex items-center gap-4 mb-8">
+                  <div className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                    <Tag className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-slate-900 dark:text-white">Panel de Organización</p>
+                    <p className="text-xs text-slate-500 font-medium">Ejemplo de clasificación visual</p>
+                  </div>
+                </div>
+                
+                <div className="space-y-4">
+                  {[
+                    { name: "Marketing Digital", color: "#6366f1", count: 12 },
+                    { name: "Hilos Virales", color: "#ec4899", count: 8 },
+                    { name: "Tutoriales", color: "#10b981", count: 5 }
+                  ].map((cat, i) => (
+                    <div key={i} className="p-4 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 flex items-center justify-between group cursor-default">
+                      <div className="flex items-center gap-3">
+                        <div className="w-3 h-3 rounded-full animate-pulse" style={{ backgroundColor: cat.color }} />
+                        <span className="font-bold text-slate-800 dark:text-slate-200">{cat.name}</span>
+                      </div>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{cat.count} hilos</span>
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="mt-8 pt-8 border-t border-slate-100 dark:border-white/10">
+                  <div className="flex flex-wrap gap-2">
+                    {["Urgente", "Para Revisar", "Idea", "Publicado"].map((tag, i) => (
+                      <span key={i} className="px-3 py-1 rounded-full border border-slate-200 dark:border-white/10 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -196,7 +270,7 @@ export default async function LandingPage() {
               <div className="bg-blue-600 p-2 rounded-lg text-white">
                 <Sparkles className="w-5 h-5" />
               </div>
-              <span className="text-xl font-black text-slate-900 dark:text-white tracking-tight">Urban<span className="text-blue-500">Suite</span></span>
+              <span className="text-xl font-black text-slate-900 dark:text-white tracking-tight">Urban</span>
             </div>
             <p className="text-slate-500 text-sm max-w-sm">
               La colección definitiva de herramientas digitales impulsadas por WebAssembly para profesionales modernos.
@@ -222,7 +296,7 @@ export default async function LandingPage() {
         
         <div className="max-w-7xl mx-auto pt-8 border-t border-slate-200 dark:border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-sm text-slate-500 font-medium">
-            © 2026 HerramientasPro. Todos los derechos reservados.
+            © 2026 Urban. Todos los derechos reservados.
           </p>
           <div className="flex items-center gap-2 text-xs text-slate-400 font-bold tracking-widest uppercase">
             <span>Hecho con</span>

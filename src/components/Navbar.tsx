@@ -17,7 +17,7 @@ export function Navbar() {
             <Hammer className="w-5 h-5 text-white" />
           </div>
           <span className="font-bold text-xl tracking-tight text-foreground">
-            Herramientas<span className="text-primary">Pro</span>
+            Urban
           </span>
         </Link>
 

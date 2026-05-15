@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getSortedPostsData } from "@/lib/blog";
 import { Calendar, User, ArrowRight } from "lucide-react";
 
-export const metadata = { title: "Blog — Generador de Hilos" };
+export const metadata = { title: "Blog — Urban" };
 
 export default function BlogPage() {
   const posts = getSortedPostsData();

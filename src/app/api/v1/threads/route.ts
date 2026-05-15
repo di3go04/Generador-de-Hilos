@@ -12,6 +12,7 @@ const schema = z.object({
   tweetCount: z.number().int().min(3).max(20).default(7),
   includeEmojis: z.boolean().default(true),
   includeHashtags: z.boolean().default(true),
+  categoryId: z.string().optional(),
 });
 
 async function getApiKeyUser(req: Request) {
@@ -70,8 +71,11 @@ export async function POST(req: Request) {
     const thread = await db.thread.create({
       data: {
         userId: user.id, title: result.title, topic: options.topic,
-        content: result.tweets, tone: options.tone, language: options.language,
+        content: JSON.stringify(result.tweets), tone: options.tone, language: options.language,
         status: "DRAFT",
+        ...(options.categoryId && {
+          categories: { create: [{ categoryId: options.categoryId }] },
+        }),
       },
     });
 

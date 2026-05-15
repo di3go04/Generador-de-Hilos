@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { z } from "zod";
-import { publishThread, decrypt } from "@/lib/twitter";
 
 const createSchema = z.object({
   title: z.string().min(1).max(200),
@@ -13,6 +12,7 @@ const createSchema = z.object({
   status: z.enum(["DRAFT", "PUBLISHED", "SCHEDULED"]).default("DRAFT"),
   scheduleAt: z.string().optional(),
   folderId: z.string().optional(),
+  categoryIds: z.array(z.string()).optional(),
 });
 
 // GET /api/threads — list user threads
@@ -26,23 +26,42 @@ export async function GET(req: Request) {
   const skip = (page - 1) * limit;
   const search = searchParams.get("search") ?? "";
   const folderId = searchParams.get("folderId");
+  const categoryId = searchParams.get("categoryId");
 
-  const where = {
+  const where: any = {
     userId: session.user.id,
-    ...(search && { title: { contains: search, mode: "insensitive" as const } }),
+    ...(search && { title: { contains: search } }),
     ...(folderId && { folderId }),
+    ...(categoryId && {
+      categories: { some: { categoryId } },
+    }),
   };
 
   const [threads, total] = await Promise.all([
     db.thread.findMany({
-      where, skip, take: limit,
+      where,
+      skip,
+      take: limit,
       orderBy: { createdAt: "desc" },
-      include: { folder: { select: { name: true, color: true } } },
+      include: {
+        folder: { select: { name: true, color: true } },
+        categories: {
+          include: { category: { select: { id: true, name: true, color: true } } },
+        },
+      },
     }),
     db.thread.count({ where }),
   ]);
 
-  return NextResponse.json({ threads, total, page, pages: Math.ceil(total / limit) });
+  // Normalize content field (stored as JSON string)
+  const normalized = threads.map((t) => ({
+    ...t,
+    content: (() => { try { return JSON.parse(t.content); } catch { return [t.content]; } })(),
+    twitterIds: t.twitterIds ? (() => { try { return JSON.parse(t.twitterIds!); } catch { return []; } })() : [],
+    categories: t.categories.map((tc) => tc.category),
+  }));
+
+  return NextResponse.json({ threads: normalized, total, page, pages: Math.ceil(total / limit) });
 }
 
 // POST /api/threads — create thread
@@ -59,18 +78,30 @@ export async function POST(req: Request) {
     // Create thread
     const thread = await db.thread.create({
       data: {
-        userId, title: data.title, topic: data.topic,
-        content: data.content, tone: data.tone, language: data.language,
-        status: data.status, folderId: data.folderId ?? null,
+        userId,
+        title: data.title,
+        topic: data.topic,
+        content: JSON.stringify(data.content),
+        tone: data.tone,
+        language: data.language,
+        status: data.status,
+        folderId: data.folderId ?? null,
+        ...(data.categoryIds?.length && {
+          categories: {
+            create: data.categoryIds.map((categoryId) => ({ categoryId })),
+          },
+        }),
+      },
+      include: {
+        categories: {
+          include: { category: { select: { id: true, name: true, color: true } } },
+        },
       },
     });
 
     // Record usage
     await db.usageRecord.create({
-      data: {
-        userId, metric: "thread_generated", quantity: 1,
-        month: now.getMonth() + 1, year: now.getFullYear(),
-      },
+      data: { userId, toolSlug: "generador-de-hilos" },
     });
 
     // Schedule post if needed
@@ -80,22 +111,7 @@ export async function POST(req: Request) {
       });
     }
 
-    // Publish to Twitter immediately if requested
-    if (data.status === "PUBLISHED") {
-      const twitterToken = await db.twitterToken.findUnique({ where: { userId } });
-      if (twitterToken?.accessToken) {
-        const accessToken = decrypt(twitterToken.accessToken);
-        const result = await publishThread(accessToken, data.content);
-        if (result.success) {
-          await db.thread.update({
-            where: { id: thread.id },
-            data: { twitterIds: result.tweetIds, publishedAt: new Date() },
-          });
-        }
-      }
-    }
-
-    return NextResponse.json({ thread }, { status: 201 });
+    return NextResponse.json({ thread: { ...thread, categories: thread.categories.map((tc) => tc.category) } }, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: "Datos inválidos", details: error.issues }, { status: 400 });

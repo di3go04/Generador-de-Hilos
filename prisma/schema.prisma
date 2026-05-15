@@ -2,7 +2,7 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-js"
+  provider   = "prisma-client-js"
   engineType = "binary"
 }
 
@@ -26,8 +26,14 @@ model User {
 
   accounts       Account[]
   sessions       Session[]
-  usageRecords   UsageRecord[]
+  threads        Thread[]
+  folders        Folder[]
+  categories     Category[]
+  apiKeys        ApiKey[]
   subscriptions  Subscription?
+  usageRecords   UsageRecord[]
+  scheduledPosts ScheduledPost[]
+  twitterToken   TwitterToken?
 
   @@map("users")
 }
@@ -63,15 +69,91 @@ model Session {
   @@map("sessions")
 }
 
+model Thread {
+  id          String   @id @default(cuid())
+  userId      String
+  folderId    String?
+  title       String
+  topic       String
+  content     String   // JSON array of tweets stored as string
+  tone        String   @default("professional")
+  language    String   @default("es")
+  status      String   @default("DRAFT") // DRAFT, PUBLISHED, SCHEDULED
+  publishedAt DateTime?
+  twitterIds  String?  // JSON array of tweet IDs
+  scheduleAt  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  folder        Folder?          @relation(fields: [folderId], references: [id])
+  scheduledPost ScheduledPost?
+  categories    ThreadCategory[]
+
+  @@map("threads")
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  name      String
+  color     String   @default("#6366f1")
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  threads ThreadCategory[]
+
+  @@map("categories")
+}
+
+model ThreadCategory {
+  threadId   String
+  categoryId String
+
+  thread   Thread   @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([threadId, categoryId])
+  @@map("thread_categories")
+}
+
+model Folder {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  color     String   @default("#6366f1")
+  createdAt DateTime @default(now())
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  threads Thread[]
+
+  @@map("folders")
+}
+
+model ApiKey {
+  id        String    @id @default(cuid())
+  userId    String
+  name      String
+  key       String    @unique
+  lastUsed  DateTime?
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("api_keys")
+}
+
 model Subscription {
-  id                   String    @id @default(cuid())
-  userId               String    @unique
-  plan                 String    @default("FREE")
-  status               String    @default("active") // active, canceled, expired
-  startDate            DateTime  @default(now())
-  endDate              DateTime?
-  createdAt            DateTime  @default(now())
-  updatedAt            DateTime  @updatedAt
+  id        String    @id @default(cuid())
+  userId    String    @unique
+  plan      String    @default("FREE")
+  status    String    @default("active") // active, canceled, expired
+  startDate DateTime  @default(now())
+  endDate   DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -81,12 +163,44 @@ model Subscription {
 model UsageRecord {
   id        String   @id @default(cuid())
   userId    String
-  toolSlug  String   // slug de la herramienta usada
+  toolSlug  String
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("usage_records")
+}
+
+model ScheduledPost {
+  id          String    @id @default(cuid())
+  userId      String
+  threadId    String    @unique
+  scheduledAt DateTime
+  publishedAt DateTime?
+  status      String    @default("pending") // pending, published, failed
+  error       String?
+  createdAt   DateTime  @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  thread Thread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+  @@map("scheduled_posts")
+}
+
+model TwitterToken {
+  id           String    @id @default(cuid())
+  userId       String    @unique
+  accessToken  String
+  refreshToken String?
+  expiresAt    DateTime?
+  twitterId    String?
+  username     String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("twitter_tokens")
 }
 
 model NewsletterLead {
